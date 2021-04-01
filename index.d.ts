@@ -1,6 +1,6 @@
 import WindiCss from 'windicss';
 import { ParserOptions } from '@babel/parser';
-import { Plugin, OnLoadArgs } from 'esbuild';
+import type { Plugin, OnLoadArgs } from 'esbuild';
 interface EsbuildPluginWindiCssOptions {
     readonly filter?: RegExp;
     readonly preprocess?: (code: string, args: OnLoadArgs) => string;

@@ -1,6 +1,6 @@
 import WindiCss from 'windicss'
 import { parse, ParserOptions } from '@babel/parser'
-import { Plugin, OnLoadArgs } from 'esbuild'
+import type { Plugin, OnLoadArgs } from 'esbuild'
 import * as fs from 'fs'
 import * as path from 'path'
 
