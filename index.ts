@@ -35,7 +35,7 @@ const plugin: EsbuildPluginWindiCss = ({ filter, babelParserOptions, windiCssCon
     allowSuperOutsideMethod: true,
     allowUndeclaredExports: true,
     tokens: true,
-    plugins: ['jsx', 'typescript'],
+    plugins: ['jsx', 'typescript', 'classProperties'],
   }
   const windiCss = new WindiCss(windiCssConfig)
   const cssFileContentsMap = new Map<string, string>()
@@ -46,7 +46,8 @@ const plugin: EsbuildPluginWindiCss = ({ filter, babelParserOptions, windiCssCon
         classNames.add(token.value)
       }
     }
-    const result = windiCss.interpret([...classNames].join(' '), true)
+    const joinedClassNames = [...classNames].join(' ').replace(RegExp(`\\b(${Object.getOwnPropertyNames(Object.prototype).join('|')})\\b`, 'g'), ' ')
+    const result = windiCss.interpret(joinedClassNames, true)
     if (result.success.length !== 0) {
       const cssFilename = `${args.path}.${pluginName}.css`
       cssFileContentsMap.set(cssFilename, result.styleSheet.build())

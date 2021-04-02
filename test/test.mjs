@@ -2,7 +2,7 @@ import assert from 'assert'
 import path from 'path'
 import esbuild from 'esbuild'
 import pipe from 'esbuild-plugin-pipe'
-import plugin from '../index.js'
+import windiCssPlugin from '../index.js'
 import url from 'url'
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
@@ -14,7 +14,11 @@ const test1 = async () => {
     write: false,
     bundle: true,
     minify: true,
-    plugins: [plugin()],
+    plugins: [
+      windiCssPlugin({
+        windiCssConfig: { prefixer: false },
+      }),
+    ],
   })
   console.log(built.outputFiles[1].text)
 
@@ -27,7 +31,7 @@ const test1 = async () => {
 }
 
 const test2 = async () => {
-  const windiCssPlugin = plugin()
+  const windiCss = windiCssPlugin({ filter: /^$/ })
   const built = await esbuild.build({
     entryPoints: [path.resolve(__dirname, 'app.ts')],
     outdir: 'dist',
@@ -37,9 +41,9 @@ const test2 = async () => {
     plugins: [
       pipe({
         filter: /\.[jt]sx?$/,
-        plugins: [windiCssPlugin],
+        plugins: [windiCss],
       }),
-      windiCssPlugin,
+      windiCss,
     ],
   })
   console.log(built.outputFiles[1].text)

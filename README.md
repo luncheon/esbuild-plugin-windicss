@@ -3,6 +3,10 @@
 An unofficial and experimental [esbuild](https://esbuild.github.io/) plugin for [Windi CSS](https://windicss.org/).  
 This plugin uses [@babel/parser](https://babeljs.io/docs/en/babel-parser) to extract string literals from source code.
 
+## Limitations
+
+- Building multiple entry points is not supported.
+
 ## Installation
 
 ```sh
@@ -22,7 +26,9 @@ esbuild.build({
   outdir: 'dist',
   bundle: true,
   minify: true,
-  plugins: [windiCssPlugin()],
+  plugins: [
+    windiCssPlugin({ windiCssConfig: { prefixer: false } }),
+  ],
 })
 ```
 
@@ -68,8 +74,9 @@ windiCssPlugin({
     allowSuperOutsideMethod: true,
     allowUndeclaredExports: true,
     tokens: true,
-    plugins: ['jsx', 'typescript'],
+    plugins: ['jsx', 'typescript', 'classProperties'],
   },
+  windiCssConfig: undefined,
 })
 ```
 
@@ -77,6 +84,8 @@ windiCssPlugin({
   https://esbuild.github.io/plugins/#filters
 - `babelParserOptions` is passed to the `@babel/parser`.  
   https://babeljs.io/docs/en/babel-parser
+- `windiCssConfig` is passed to the Windi CSS API.  
+  https://github.com/windicss/windicss/blob/main/src/interfaces.ts#:~:text=export%20interface%20Config
 
 ## With `esbuild-plugin-pipe`
 
@@ -85,9 +94,9 @@ If you use this plugin with [`esbuild-plugin-pipe`](https://github.com/nativew/e
 ```js
 import esbuild from 'esbuild'
 import pipe from 'esbuild-plugin-pipe'
-import WindiCssPlugin from '@luncheon/esbuild-plugin-windicss'
+import windiCssPlugin from '@luncheon/esbuild-plugin-windicss'
 
-const windiCssPlugin = WindiCssPlugin()
+const windiCss = windiCssPlugin({ filter: /^$/, windiCssConfig: { prefixer: false } })
 
 esbuild.build({
   entryPoints: ['src/app.ts'],
@@ -97,9 +106,9 @@ esbuild.build({
   plugins: [
     pipe({
       filter: /\.[jt]sx?$/,
-      plugins: [windiCssPlugin],
+      plugins: [windiCss],
     }),
-    windiCssPlugin,
+    windiCss,
   ],
 })
 ```
