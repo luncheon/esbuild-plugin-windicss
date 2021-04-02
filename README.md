@@ -21,6 +21,7 @@ esbuild.build({
   entryPoints: ['src/app.ts'],
   outdir: 'dist',
   bundle: true,
+  minify: true,
   plugins: [windiCssPlugin()],
 })
 ```
@@ -59,7 +60,6 @@ The following are the options for this plugin and their default values.
 ```js
 windiCssPlugin({
   filter: /\.[jt]sx?$/,
-  preprocess: (code, args) => code,
   babelParserOptions: {
     errorRecovery: true,
     allowAwaitOutsideFunction: true,
@@ -77,6 +77,32 @@ windiCssPlugin({
   https://esbuild.github.io/plugins/#filters
 - `babelParserOptions` is passed to the `@babel/parser`.  
   https://babeljs.io/docs/en/babel-parser
+
+## With `esbuild-plugin-pipe`
+
+If you use this plugin with [`esbuild-plugin-pipe`](https://github.com/nativew/esbuild-plugin-pipe), pass the same plugin instance to both `esbuild-plugin-pipe` and `esbuild`.
+
+```js
+import esbuild from 'esbuild'
+import pipe from 'esbuild-plugin-pipe'
+import WindiCssPlugin from '@luncheon/esbuild-plugin-windicss'
+
+const windiCssPlugin = WindiCssPlugin()
+
+esbuild.build({
+  entryPoints: ['src/app.ts'],
+  outdir: 'dist',
+  bundle: true,
+  minify: true,
+  plugins: [
+    pipe({
+      filter: /\.[jt]sx?$/,
+      plugins: [windiCssPlugin],
+    }),
+    windiCssPlugin,
+  ],
+})
+```
 
 ## License
 

@@ -1,14 +1,22 @@
 import WindiCss from 'windicss';
 import { ParserOptions } from '@babel/parser';
-import type { Plugin, OnLoadArgs } from 'esbuild';
+import type { Plugin, OnLoadArgs, PluginBuild, OnLoadResult } from 'esbuild';
+interface EsbuildPipeableTransformArgs {
+    readonly args: OnLoadArgs;
+    readonly contents: string;
+}
+interface EsbuildPipeablePlugin extends Plugin {
+    setup: (build: PluginBuild, pipe?: {
+        transform: EsbuildPipeableTransformArgs;
+    }) => void | OnLoadResult;
+}
 interface EsbuildPluginWindiCssOptions {
     readonly filter?: RegExp;
-    readonly preprocess?: (code: string, args: OnLoadArgs) => string;
     readonly babelParserOptions?: ParserOptions;
     readonly windiCssConfig?: ConstructorParameters<typeof WindiCss>[0];
 }
 interface EsbuildPluginWindiCss {
-    (options?: EsbuildPluginWindiCssOptions): Plugin;
+    (options?: EsbuildPluginWindiCssOptions): EsbuildPipeablePlugin;
     default: EsbuildPluginWindiCss;
 }
 declare const _default: EsbuildPluginWindiCss;

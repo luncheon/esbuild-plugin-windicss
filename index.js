@@ -26,48 +26,54 @@ const parser_1 = require("@babel/parser");
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const name = 'esbuild-plugin-windicss';
-const plugin = ({ filter, preprocess, babelParserOptions, windiCssConfig } = {}) => ({
-    name,
-    setup(build) {
-        const resolvedBabelParserOptions = babelParserOptions ? { ...babelParserOptions, tokens: true } : {
-            errorRecovery: true,
-            allowAwaitOutsideFunction: true,
-            allowImportExportEverywhere: true,
-            allowReturnOutsideFunction: true,
-            allowSuperOutsideMethod: true,
-            allowUndeclaredExports: true,
-            tokens: true,
-            plugins: ['jsx', 'typescript'],
-        };
-        const windiCss = new windicss_1.default(windiCssConfig);
-        const cssFileContentsMap = new Map();
-        build.onLoad({ filter: filter ?? /\.[jt]sx?$/ }, async (args) => {
-            let code = await fs.promises.readFile(args.path, 'utf8');
-            code = preprocess ? preprocess(code, args) : code;
-            try {
-                const classNames = new Set();
-                for (const token of parser_1.parse(code, resolvedBabelParserOptions).tokens) {
-                    if (token.value && (token.type.label === 'string' || token.type.label === 'template')) {
-                        classNames.add(token.value);
-                    }
-                }
-                const result = windiCss.interpret([...classNames].join(' '), true);
-                if (result.success.length !== 0) {
-                    const cssFilename = `${args.path}.${name}.css`;
-                    cssFileContentsMap.set(cssFilename, result.styleSheet.build());
-                    code = `import '${cssFilename}'\n${code}`;
-                }
-                return { contents: code, loader: path.extname(args.path).slice(1) };
+const plugin = ({ filter, babelParserOptions, windiCssConfig } = {}) => {
+    const resolvedBabelParserOptions = babelParserOptions ? { ...babelParserOptions, tokens: true } : {
+        errorRecovery: true,
+        allowAwaitOutsideFunction: true,
+        allowImportExportEverywhere: true,
+        allowReturnOutsideFunction: true,
+        allowSuperOutsideMethod: true,
+        allowUndeclaredExports: true,
+        tokens: true,
+        plugins: ['jsx', 'typescript'],
+    };
+    const windiCss = new windicss_1.default(windiCssConfig);
+    const cssFileContentsMap = new Map();
+    const transform = ({ args, contents }) => {
+        const classNames = new Set();
+        for (const token of parser_1.parse(contents, resolvedBabelParserOptions).tokens) {
+            if (token.value && (token.type.label === 'string' || token.type.label === 'template')) {
+                classNames.add(token.value);
             }
-            catch (error) {
-                return { errors: [{ text: error.message }] };
+        }
+        const result = windiCss.interpret([...classNames].join(' '), true);
+        if (result.success.length !== 0) {
+            const cssFilename = `${args.path}.${name}.css`;
+            cssFileContentsMap.set(cssFilename, result.styleSheet.build());
+            contents = `import '${cssFilename}'\n${contents}`;
+        }
+        return { contents, loader: path.extname(args.path).slice(1) };
+    };
+    return {
+        name,
+        setup(build, pipe) {
+            if (pipe?.transform) {
+                return transform(pipe.transform);
             }
-        });
-        build.onResolve({ filter: RegExp(String.raw `\.${name}\.css`) }, ({ path }) => ({ path, namespace: name }));
-        build.onLoad({ filter: RegExp(String.raw `\.${name}\.css`), namespace: name }, ({ path }) => {
-            const contents = cssFileContentsMap.get(path);
-            return contents ? { contents, loader: 'css' } : undefined;
-        });
-    },
-});
+            build.onLoad({ filter: filter ?? /\.[jt]sx?$/ }, async (args) => {
+                try {
+                    return transform({ args, contents: await fs.promises.readFile(args.path, 'utf8') });
+                }
+                catch (error) {
+                    return { errors: [{ text: error.message }] };
+                }
+            });
+            build.onResolve({ filter: RegExp(String.raw `\.${name}\.css`) }, ({ path }) => ({ path, namespace: name }));
+            build.onLoad({ filter: RegExp(String.raw `\.${name}\.css`), namespace: name }, ({ path }) => {
+                const contents = cssFileContentsMap.get(path);
+                return contents ? { contents, loader: 'css' } : undefined;
+            });
+        },
+    };
+};
 module.exports = plugin.default = plugin;
