@@ -18,7 +18,8 @@
     "build": "npm run clean && npm run compile && npm t",
     "clean": "rimraf index.js index.d.ts",
     "compile": "tsc -p .",
-    "test": "node test/test.mjs"
+    "test": "node test/test.mjs",
+    "serve": "node test/serve.js"
   },
   "devDependencies": {
     "@babel/types": "^7.13.14",

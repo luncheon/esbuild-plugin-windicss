@@ -28,6 +28,7 @@ const test1 = async () => {
   assert(css.includes('@media(min-width:640px){.sm\\:m-auto{margin:auto}}'))
   assert(css.includes('.bg-green-300{'))
   assert(css.includes('.bg-red-300{'))
+  assert(css.includes('.grid{display:grid}'))
 }
 
 const test2 = async () => {
@@ -54,6 +55,7 @@ const test2 = async () => {
   assert(css.includes('@media(min-width:640px){.sm\\:m-auto{margin:auto}}'))
   assert(css.includes('.bg-green-300{'))
   assert(css.includes('.bg-red-300{'))
+  assert(css.includes('.grid{display:-ms-grid;display:grid}'))
 }
 
 const main = async () => {
