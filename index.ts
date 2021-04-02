@@ -1,8 +1,8 @@
-import WindiCss from 'windicss'
 import { parse, ParserOptions } from '@babel/parser'
-import type { Plugin, OnLoadArgs, PluginBuild, OnLoadResult } from 'esbuild'
+import type { OnLoadArgs, OnLoadResult, Plugin, PluginBuild } from 'esbuild'
 import * as fs from 'fs'
 import * as path from 'path'
+import WindiCss from 'windicss'
 
 interface EsbuildPipeableTransformArgs {
   readonly args: OnLoadArgs
@@ -12,8 +12,6 @@ interface EsbuildPipeableTransformArgs {
 interface EsbuildPipeablePlugin extends Plugin {
   setup: (build: PluginBuild, pipe?: { transform: EsbuildPipeableTransformArgs }) => void | OnLoadResult
 }
-
-const name = 'esbuild-plugin-windicss'
 
 interface EsbuildPluginWindiCssOptions {
   readonly filter?: RegExp
@@ -25,6 +23,8 @@ interface EsbuildPluginWindiCss {
   (options?: EsbuildPluginWindiCssOptions): EsbuildPipeablePlugin
   default: EsbuildPluginWindiCss
 }
+
+const pluginName = 'esbuild-plugin-windicss'
 
 const plugin: EsbuildPluginWindiCss = ({ filter, babelParserOptions, windiCssConfig } = {}) => {
   const resolvedBabelParserOptions: ParserOptions = babelParserOptions ? { ...babelParserOptions, tokens: true } : {
@@ -48,14 +48,14 @@ const plugin: EsbuildPluginWindiCss = ({ filter, babelParserOptions, windiCssCon
     }
     const result = windiCss.interpret([...classNames].join(' '), true)
     if (result.success.length !== 0) {
-      const cssFilename = `${args.path}.${name}.css`
+      const cssFilename = `${args.path}.${pluginName}.css`
       cssFileContentsMap.set(cssFilename, result.styleSheet.build())
       contents = `import '${cssFilename}'\n${contents}`
     }
     return { contents, loader: path.extname(args.path).slice(1) as 'js' | 'jsx' | 'ts' | 'tsx' }
   }
   return {
-    name,
+    name: pluginName,
     setup(build, pipe) {
       if (pipe?.transform) {
         return transform(pipe.transform)
@@ -67,8 +67,8 @@ const plugin: EsbuildPluginWindiCss = ({ filter, babelParserOptions, windiCssCon
           return { errors: [{ text: error.message }] }
         }
       })
-      build.onResolve({ filter: RegExp(String.raw`\.${name}\.css`) }, ({ path }) => ({ path, namespace: name }))
-      build.onLoad({ filter: RegExp(String.raw`\.${name}\.css`), namespace: name }, ({ path }) => {
+      build.onResolve({ filter: RegExp(String.raw`\.${pluginName}\.css`) }, ({ path }) => ({ path, namespace: pluginName }))
+      build.onLoad({ filter: RegExp(String.raw`\.${pluginName}\.css`), namespace: pluginName }, ({ path }) => {
         const contents = cssFileContentsMap.get(path)
         return contents ? { contents, loader: 'css' } : undefined
       })

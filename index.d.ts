@@ -1,6 +1,6 @@
-import WindiCss from 'windicss';
 import { ParserOptions } from '@babel/parser';
-import type { Plugin, OnLoadArgs, PluginBuild, OnLoadResult } from 'esbuild';
+import type { OnLoadArgs, OnLoadResult, Plugin, PluginBuild } from 'esbuild';
+import WindiCss from 'windicss';
 interface EsbuildPipeableTransformArgs {
     readonly args: OnLoadArgs;
     readonly contents: string;
