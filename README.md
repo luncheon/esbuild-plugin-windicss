@@ -56,7 +56,7 @@ Then two files will be output
 - dist/app.css
 
 ```css
-.bg-green-300{--tw-bg-opacity: 1;background-color:rgba(110,231,183,var(--tw-bg-opacity))}.bg-red-300{--tw-bg-opacity: 1;background-color:rgba(252,165,165,var(--tw-bg-opacity))}.mx-4{margin-left:1rem;margin-right:1rem}@media (min-width: 640px){.sm\:m-auto{margin:auto}}
+.bg-green-300{--tw-bg-opacity:1;background-color:rgba(110,231,183,var(--tw-bg-opacity))}.bg-red-300{--tw-bg-opacity:1;background-color:rgba(252,165,165,var(--tw-bg-opacity))}.mx-4{margin-left:1rem;margin-right:1rem}@media (min-width: 640px){.sm\:m-auto{margin:auto}}
 ```
 
 ## Options

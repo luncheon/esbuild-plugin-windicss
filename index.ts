@@ -3,6 +3,7 @@ import type { OnLoadArgs, OnLoadResult, Plugin, PluginBuild } from 'esbuild'
 import * as fs from 'fs'
 import * as path from 'path'
 import WindiCss from 'windicss'
+import { StyleSheet } from 'windicss/utils/style'
 
 interface EsbuildPipeableTransformArgs {
   readonly args: OnLoadArgs
@@ -26,6 +27,8 @@ interface EsbuildPluginWindiCss {
 
 const pluginName = 'esbuild-plugin-windicss'
 
+const ignoredClassPattern = RegExp(`\\b(${Object.getOwnPropertyNames(Object.prototype).join('|')})\\b`, 'g')
+
 const plugin: EsbuildPluginWindiCss = ({ filter, babelParserOptions, windiCssConfig } = {}) => {
   const resolvedBabelParserOptions: ParserOptions = babelParserOptions ? { ...babelParserOptions, tokens: true } : {
     errorRecovery: true,
@@ -40,17 +43,18 @@ const plugin: EsbuildPluginWindiCss = ({ filter, babelParserOptions, windiCssCon
   const windiCss = new WindiCss(windiCssConfig)
   const cssFileContentsMap = new Map<string, string>()
   const transform = ({ args, contents }: EsbuildPipeableTransformArgs) => {
-    const classNames = new Set<string>()
+    const styleSheet = new StyleSheet()
     for (const token of parse(contents, resolvedBabelParserOptions).tokens!) {
       if (token.value && (token.type.label === 'string' || token.type.label === 'template')) {
-        classNames.add(token.value)
+        const interpreted = windiCss.interpret(token.value.replace(ignoredClassPattern, ' ').trim(), true)
+        if (interpreted.success.length !== 0) {
+          styleSheet.extend(interpreted.styleSheet)
+        }
       }
     }
-    const joinedClassNames = [...classNames].join(' ').replace(RegExp(`\\b(${Object.getOwnPropertyNames(Object.prototype).join('|')})\\b`, 'g'), ' ')
-    const result = windiCss.interpret(joinedClassNames, true)
-    if (result.success.length !== 0) {
+    if (styleSheet.children.length !== 0) {
       const cssFilename = `${args.path}.${pluginName}.css`
-      cssFileContentsMap.set(cssFilename, result.styleSheet.build())
+      cssFileContentsMap.set(cssFilename, styleSheet.combine().sort().build(true))
       contents = `import '${cssFilename}'\n${contents}`
     }
     return { contents, loader: path.extname(args.path).slice(1) as 'js' | 'jsx' | 'ts' | 'tsx' }

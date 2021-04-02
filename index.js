@@ -25,7 +25,9 @@ const parser_1 = require("@babel/parser");
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const windicss_1 = __importDefault(require("windicss"));
+const style_1 = require("windicss/utils/style");
 const pluginName = 'esbuild-plugin-windicss';
+const ignoredClassPattern = RegExp(`\\b(${Object.getOwnPropertyNames(Object.prototype).join('|')})\\b`, 'g');
 const plugin = ({ filter, babelParserOptions, windiCssConfig } = {}) => {
     const resolvedBabelParserOptions = babelParserOptions ? { ...babelParserOptions, tokens: true } : {
         errorRecovery: true,
@@ -40,17 +42,18 @@ const plugin = ({ filter, babelParserOptions, windiCssConfig } = {}) => {
     const windiCss = new windicss_1.default(windiCssConfig);
     const cssFileContentsMap = new Map();
     const transform = ({ args, contents }) => {
-        const classNames = new Set();
+        const styleSheet = new style_1.StyleSheet();
         for (const token of parser_1.parse(contents, resolvedBabelParserOptions).tokens) {
             if (token.value && (token.type.label === 'string' || token.type.label === 'template')) {
-                classNames.add(token.value);
+                const interpreted = windiCss.interpret(token.value.replace(ignoredClassPattern, ' ').trim(), true);
+                if (interpreted.success.length !== 0) {
+                    styleSheet.extend(interpreted.styleSheet);
+                }
             }
         }
-        const joinedClassNames = [...classNames].join(' ').replace(RegExp(`\\b(${Object.getOwnPropertyNames(Object.prototype).join('|')})\\b`, 'g'), ' ');
-        const result = windiCss.interpret(joinedClassNames, true);
-        if (result.success.length !== 0) {
+        if (styleSheet.children.length !== 0) {
             const cssFilename = `${args.path}.${pluginName}.css`;
-            cssFileContentsMap.set(cssFilename, result.styleSheet.build());
+            cssFileContentsMap.set(cssFilename, styleSheet.combine().sort().build(true));
             contents = `import '${cssFilename}'\n${contents}`;
         }
         return { contents, loader: path.extname(args.path).slice(1) };
