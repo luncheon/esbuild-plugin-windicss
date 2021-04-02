@@ -1,6 +1,6 @@
 {
   "name": "@luncheon/esbuild-plugin-windicss",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "An unofficial and experimental esbuild plugin for Windi CSS.",
   "license": "WTFPL",
   "repository": "luncheon/esbuild-plugin-windicss",

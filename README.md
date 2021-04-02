@@ -10,7 +10,7 @@ This plugin uses [@babel/parser](https://babeljs.io/docs/en/babel-parser) to ext
 ## Installation
 
 ```sh
-$ npm i -D esbuild luncheon/esbuild-plugin-windicss
+$ npm i -D esbuild @luncheon/esbuild-plugin-windicss
 ```
 
 ## Usage Example
@@ -96,7 +96,10 @@ import esbuild from 'esbuild'
 import pipe from 'esbuild-plugin-pipe'
 import windiCssPlugin from '@luncheon/esbuild-plugin-windicss'
 
-const windiCss = windiCssPlugin({ filter: /^$/, windiCssConfig: { prefixer: false } })
+const windiCss = windiCssPlugin({
+  filter: /^$/,
+  windiCssConfig: { prefixer: false },
+})
 
 esbuild.build({
   entryPoints: ['src/app.ts'],
