@@ -68,7 +68,7 @@ const plugin = ({ filter, babelParserOptions, windiCssConfig } = {}) => {
     };
     return {
         name: pluginName,
-        setup(build, pipe) {
+        setup: ((build, pipe) => {
             if (pipe?.transform) {
                 return transform(pipe.transform);
             }
@@ -85,7 +85,7 @@ const plugin = ({ filter, babelParserOptions, windiCssConfig } = {}) => {
                 const contents = cssFileContentsMap.get(path);
                 return contents ? { contents, loader: 'css' } : undefined;
             });
-        },
+        }),
     };
 };
 module.exports = plugin.default = plugin;

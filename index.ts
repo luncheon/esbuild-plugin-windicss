@@ -11,7 +11,8 @@ interface EsbuildPipeableTransformArgs {
 }
 
 interface EsbuildPipeablePlugin extends Plugin {
-  setup: (build: PluginBuild, pipe?: { transform: EsbuildPipeableTransformArgs }) => void | OnLoadResult
+  setup(build: PluginBuild, pipe: { transform: EsbuildPipeableTransformArgs }): OnLoadResult
+  setup(build: PluginBuild): void
 }
 
 interface EsbuildPluginWindiCssOptions {
@@ -69,7 +70,7 @@ const plugin: EsbuildPluginWindiCss = ({ filter, babelParserOptions, windiCssCon
   }
   return {
     name: pluginName,
-    setup(build, pipe) {
+    setup: ((build: PluginBuild, pipe?: { transform: EsbuildPipeableTransformArgs }) => {
       if (pipe?.transform) {
         return transform(pipe.transform)
       }
@@ -85,7 +86,7 @@ const plugin: EsbuildPluginWindiCss = ({ filter, babelParserOptions, windiCssCon
         const contents = cssFileContentsMap.get(path)
         return contents ? { contents, loader: 'css' } : undefined
       })
-    },
+    }) as EsbuildPipeablePlugin['setup'],
   }
 }
 

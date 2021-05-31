@@ -6,9 +6,10 @@ interface EsbuildPipeableTransformArgs {
     readonly contents: string;
 }
 interface EsbuildPipeablePlugin extends Plugin {
-    setup: (build: PluginBuild, pipe?: {
+    setup(build: PluginBuild, pipe: {
         transform: EsbuildPipeableTransformArgs;
-    }) => void | OnLoadResult;
+    }): OnLoadResult;
+    setup(build: PluginBuild): void;
 }
 interface EsbuildPluginWindiCssOptions {
     readonly filter?: RegExp;
