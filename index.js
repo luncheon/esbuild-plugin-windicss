@@ -37,7 +37,7 @@ const plugin = ({ filter, babelParserOptions, windiCssConfig } = {}) => {
         allowSuperOutsideMethod: true,
         allowUndeclaredExports: true,
         tokens: true,
-        plugins: ['jsx', 'typescript', 'classProperties'],
+        plugins: ['jsx', 'typescript', 'topLevelAwait'],
     };
     let windiCss = new windicss_1.default(windiCssConfig);
     let firstFilePath;

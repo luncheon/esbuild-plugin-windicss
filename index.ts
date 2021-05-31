@@ -39,7 +39,7 @@ const plugin: EsbuildPluginWindiCss = ({ filter, babelParserOptions, windiCssCon
     allowSuperOutsideMethod: true,
     allowUndeclaredExports: true,
     tokens: true,
-    plugins: ['jsx', 'typescript', 'classProperties'],
+    plugins: ['jsx', 'typescript', 'topLevelAwait'],
   }
   let windiCss = new WindiCss(windiCssConfig)
   let firstFilePath: string | undefined

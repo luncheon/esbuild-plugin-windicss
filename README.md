@@ -75,7 +75,7 @@ windiCssPlugin({
     allowSuperOutsideMethod: true,
     allowUndeclaredExports: true,
     tokens: true,
-    plugins: ['jsx', 'typescript', 'classProperties'],
+    plugins: ['jsx', 'typescript', 'topLevelAwait'],
   },
   windiCssConfig: undefined,
 })
