@@ -21,50 +21,91 @@ var __importStar = (this && this.__importStar) || function (mod) {
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-const parser_1 = require("@babel/parser");
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const windicss_1 = __importDefault(require("windicss"));
 const style_1 = require("windicss/utils/style");
 const pluginName = 'esbuild-plugin-windicss';
 const ignoredClassPattern = RegExp(`\\b(${Object.getOwnPropertyNames(Object.prototype).join('|')})\\b`, 'g');
-const plugin = ({ filter, babelParserOptions, windiCssConfig } = {}) => {
-    const resolvedBabelParserOptions = babelParserOptions ? { ...babelParserOptions, tokens: true } : {
-        errorRecovery: true,
-        allowAwaitOutsideFunction: true,
-        allowImportExportEverywhere: true,
-        allowReturnOutsideFunction: true,
-        allowSuperOutsideMethod: true,
-        allowUndeclaredExports: true,
-        tokens: true,
-        plugins: ['jsx', 'typescript', 'topLevelAwait'],
-    };
+const plugin = ({ filter, parser, babelParserOptions, windiCssConfig } = {}) => {
     let windiCss = new windicss_1.default(windiCssConfig);
+    const collectStylesFromString = (styleSheet, className) => {
+        const interpreted = windiCss.interpret(className.replace(ignoredClassPattern, ' ').trim(), true);
+        if (interpreted.success.length !== 0) {
+            styleSheet.extend(interpreted.styleSheet);
+        }
+    };
+    const collectStylesFromTransformArgs = (() => {
+        if (parser === 'swc') {
+            const swc = require('@swc/core');
+            class StringLiteralCollector extends require('@swc/core/Visitor').Visitor {
+                constructor(styleSheet) {
+                    super();
+                    this.styleSheet = styleSheet;
+                }
+                visitStringLiteral(token) {
+                    collectStylesFromString(this.styleSheet, token.value);
+                    return super.visitStringLiteral(token);
+                }
+                visitTemplateLiteral(token) {
+                    for (const { raw } of token.quasis) {
+                        collectStylesFromString(this.styleSheet, raw.value);
+                    }
+                    return super.visitTemplateLiteral(token);
+                }
+                visitTsType(token) {
+                    return token;
+                }
+            }
+            return ({ args, contents }, styleSheet) => {
+                const ts = /\.tsx?$/.test(args.path);
+                const options = ts ? { syntax: 'typescript', tsx: args.path.endsWith('x') } : { syntax: 'ecmascript', jsx: args.path.endsWith('x') };
+                new StringLiteralCollector(styleSheet).visitModule(swc.parseSync(contents, options));
+            };
+        }
+        else {
+            const babel = require('@babel/parser');
+            const resolvedBabelParserOptions = babelParserOptions ? { ...babelParserOptions, tokens: true } : {
+                errorRecovery: true,
+                allowAwaitOutsideFunction: true,
+                allowImportExportEverywhere: true,
+                allowReturnOutsideFunction: true,
+                allowSuperOutsideMethod: true,
+                allowUndeclaredExports: true,
+                tokens: true,
+                plugins: ['jsx', 'typescript', 'topLevelAwait'],
+            };
+            return ({ contents }, styleSheet) => {
+                for (const token of babel.parse(contents, resolvedBabelParserOptions).tokens) {
+                    if (token.value && (token.type.label === 'string' || token.type.label === 'template')) {
+                        collectStylesFromString(styleSheet, token.value);
+                    }
+                }
+            };
+        }
+    })();
     let firstFilePath;
     const cssFileContentsMap = new Map();
-    const transform = ({ args, contents }) => {
+    const transform = (args) => {
         // recreate WindiCss instance for each build
         if (firstFilePath === undefined) {
-            firstFilePath = args.path;
+            firstFilePath = args.args.path;
         }
-        else if (firstFilePath === args.path) {
+        else if (firstFilePath === args.args.path) {
             windiCss = new windicss_1.default(windiCssConfig);
         }
         const styleSheet = new style_1.StyleSheet();
-        for (const token of parser_1.parse(contents, resolvedBabelParserOptions).tokens) {
-            if (token.value && (token.type.label === 'string' || token.type.label === 'template')) {
-                const interpreted = windiCss.interpret(token.value.replace(ignoredClassPattern, ' ').trim(), true);
-                if (interpreted.success.length !== 0) {
-                    styleSheet.extend(interpreted.styleSheet);
-                }
-            }
-        }
+        collectStylesFromTransformArgs(args, styleSheet);
+        let contents;
         if (styleSheet.children.length !== 0) {
-            const cssFilename = `${args.path}.${pluginName}.css`;
+            const cssFilename = `${args.args.path}.${pluginName}.css`;
             cssFileContentsMap.set(cssFilename, styleSheet.combine().sort().build(true));
-            contents = `import '${cssFilename}'\n${contents}`;
+            contents = `import '${cssFilename}'\n${args.contents}`;
         }
-        return { contents, loader: path.extname(args.path).slice(1) };
+        else {
+            contents = args.contents;
+        }
+        return { contents, loader: path.extname(args.args.path).slice(1) };
     };
     return {
         name: pluginName,

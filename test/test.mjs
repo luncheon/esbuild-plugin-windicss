@@ -7,7 +7,7 @@ import url from 'url'
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
 
-const test1 = async () => {
+const test1 = async parser => {
   const built = await esbuild.build({
     entryPoints: [path.resolve(__dirname, 'app.ts')],
     outdir: 'dist',
@@ -16,6 +16,7 @@ const test1 = async () => {
     minify: true,
     plugins: [
       windiCssPlugin({
+        parser,
         windiCssConfig: { prefixer: false },
       }),
     ],
@@ -31,8 +32,8 @@ const test1 = async () => {
   assert(css.includes('.grid{display:grid}'))
 }
 
-const test2 = async () => {
-  const windiCss = windiCssPlugin({ filter: /^$/ })
+const test2 = async parser => {
+  const windiCss = windiCssPlugin({ filter: /^$/, parser })
   const built = await esbuild.build({
     entryPoints: [path.resolve(__dirname, 'app.ts')],
     outdir: 'dist',
@@ -59,8 +60,10 @@ const test2 = async () => {
 }
 
 const main = async () => {
-  await test1()
-  await test2()
+  await test1('babel')
+  await test2('babel')
+  await test1('swc')
+  await test2('swc')
   console.log('success')
 }
 
