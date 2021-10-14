@@ -32,6 +32,7 @@
   "dependencies": {
     "@babel/parser": "^7.14.4",
     "@swc/core": "^1.2.96",
+    "sucrase": "^3.20.2",
     "windicss": "^3.0.12"
   }
 }

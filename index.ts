@@ -1,7 +1,9 @@
-import type * as babelParser from '@babel/parser'
 import type { OnLoadArgs, OnLoadResult, Plugin, PluginBuild } from 'esbuild'
+import type * as babelParser from '@babel/parser'
 import type * as swcCore from '@swc/core'
-import type { Visitor as swcVisitor } from '@swc/core/Visitor'
+import type * as swcVisitor from '@swc/core/Visitor'
+import type * as sucraseParser from 'sucrase/dist/parser'
+import type * as sucraseTokenTypes from 'sucrase/dist/parser/tokenizer/types'
 import * as fs from 'fs'
 import * as path from 'path'
 import WindiCss from 'windicss'
@@ -19,7 +21,7 @@ interface EsbuildPipeablePlugin extends Plugin {
 
 interface EsbuildPluginWindiCssOptions {
   readonly filter?: RegExp
-  readonly parser?: 'babel' | 'swc'
+  readonly parser?: 'babel' | 'sucrase' | 'swc'
   readonly babelParserOptions?: babelParser.ParserOptions
   readonly windiCssConfig?: ConstructorParameters<typeof WindiCss>[0]
 }
@@ -44,8 +46,9 @@ const plugin: EsbuildPluginWindiCss = ({ filter, parser, babelParserOptions, win
 
   const collectStylesFromTransformArgs = ((): ({ args, contents }: EsbuildPipeableTransformArgs, styleSheet: StyleSheet) => void => {
     if (parser === 'swc') {
-      const swc: typeof swcCore = require('@swc/core')
-      class StringLiteralCollector extends (require('@swc/core/Visitor').Visitor as { new(): swcVisitor }) {
+      const swc = require('@swc/core') as typeof swcCore
+      const { Visitor } = require('@swc/core/Visitor') as typeof swcVisitor
+      class StringLiteralCollector extends Visitor {
         constructor(private readonly styleSheet: StyleSheet) {
           super()
         }
@@ -67,6 +70,19 @@ const plugin: EsbuildPluginWindiCss = ({ filter, parser, babelParserOptions, win
         const ts = /\.tsx?$/.test(args.path)
         const options: Parameters<typeof swcCore.parseSync>[1] = ts ? { syntax: 'typescript', tsx: args.path.endsWith('x') } : { syntax: 'ecmascript', jsx: args.path.endsWith('x') }
         new StringLiteralCollector(styleSheet).visitModule(swc.parseSync(contents, options))
+      }
+    } else if (parser === 'sucrase') {
+      const parser = require('sucrase/dist/parser') as typeof sucraseParser
+      const { TokenType } = require('sucrase/dist/parser/tokenizer/types') as typeof sucraseTokenTypes
+      return ({ args, contents }, styleSheet) => {
+        for (const token of parser.parse(contents, args.path.endsWith('x'), /\.tsx?$/.test(args.path), false).tokens) {
+          if (token.type === TokenType.string) {
+            // see TokenProcessor.prototype.stringValueForToken()
+            collectStylesFromString(styleSheet, contents.slice(token.start + 1, token.end - 1))
+          } else if (token.type === TokenType.template) {
+            collectStylesFromString(styleSheet, contents.slice(token.start, token.end))
+          }
+        }
       }
     } else {
       const babel: typeof babelParser = require('@babel/parser')

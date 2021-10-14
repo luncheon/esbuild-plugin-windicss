@@ -38,7 +38,8 @@ const plugin = ({ filter, parser, babelParserOptions, windiCssConfig } = {}) => 
     const collectStylesFromTransformArgs = (() => {
         if (parser === 'swc') {
             const swc = require('@swc/core');
-            class StringLiteralCollector extends require('@swc/core/Visitor').Visitor {
+            const { Visitor } = require('@swc/core/Visitor');
+            class StringLiteralCollector extends Visitor {
                 constructor(styleSheet) {
                     super();
                     this.styleSheet = styleSheet;
@@ -61,6 +62,21 @@ const plugin = ({ filter, parser, babelParserOptions, windiCssConfig } = {}) => 
                 const ts = /\.tsx?$/.test(args.path);
                 const options = ts ? { syntax: 'typescript', tsx: args.path.endsWith('x') } : { syntax: 'ecmascript', jsx: args.path.endsWith('x') };
                 new StringLiteralCollector(styleSheet).visitModule(swc.parseSync(contents, options));
+            };
+        }
+        else if (parser === 'sucrase') {
+            const parser = require('sucrase/dist/parser');
+            const { TokenType } = require('sucrase/dist/parser/tokenizer/types');
+            return ({ args, contents }, styleSheet) => {
+                for (const token of parser.parse(contents, args.path.endsWith('x'), /\.tsx?$/.test(args.path), false).tokens) {
+                    if (token.type === TokenType.string) {
+                        // see TokenProcessor.prototype.stringValueForToken()
+                        collectStylesFromString(styleSheet, contents.slice(token.start + 1, token.end - 1));
+                    }
+                    else if (token.type === TokenType.template) {
+                        collectStylesFromString(styleSheet, contents.slice(token.start, token.end));
+                    }
+                }
             };
         }
         else {

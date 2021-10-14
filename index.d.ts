@@ -1,5 +1,5 @@
-import type * as babelParser from '@babel/parser';
 import type { OnLoadArgs, OnLoadResult, Plugin, PluginBuild } from 'esbuild';
+import type * as babelParser from '@babel/parser';
 import WindiCss from 'windicss';
 interface EsbuildPipeableTransformArgs {
     readonly args: OnLoadArgs;
@@ -13,7 +13,7 @@ interface EsbuildPipeablePlugin extends Plugin {
 }
 interface EsbuildPluginWindiCssOptions {
     readonly filter?: RegExp;
-    readonly parser?: 'babel' | 'swc';
+    readonly parser?: 'babel' | 'sucrase' | 'swc';
     readonly babelParserOptions?: babelParser.ParserOptions;
     readonly windiCssConfig?: ConstructorParameters<typeof WindiCss>[0];
 }

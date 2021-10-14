@@ -64,6 +64,8 @@ const main = async () => {
   await test2('babel')
   await test1('swc')
   await test2('swc')
+  await test1('sucrase')
+  await test2('sucrase')
   console.log('success')
 }
 
