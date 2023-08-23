@@ -22,7 +22,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 const parser_1 = require("@babel/parser");
-const fs = __importStar(require("fs"));
+const promises_1 = require("fs/promises");
 const path = __importStar(require("path"));
 const windicss_1 = __importDefault(require("windicss"));
 const style_1 = require("windicss/utils/style");
@@ -62,7 +62,7 @@ const plugin = ({ filter, babelParserOptions, windiCssConfig } = {}) => {
         if (styleSheet.children.length !== 0) {
             const cssFilename = `${args.path}.${pluginName}.css`;
             cssFileContentsMap.set(cssFilename, styleSheet.combine().sort().build(true));
-            contents = `import '${cssFilename}'\n${contents}`;
+            contents = `import '${cssFilename.replace(/\\/g, '\\\\')}';\n${contents}`;
         }
         return { contents, loader: path.extname(args.path).slice(1) };
     };
@@ -72,14 +72,7 @@ const plugin = ({ filter, babelParserOptions, windiCssConfig } = {}) => {
             if (pipe?.transform) {
                 return transform(pipe.transform);
             }
-            build.onLoad({ filter: filter ?? /\.[jt]sx?$/ }, async (args) => {
-                try {
-                    return transform({ args, contents: await fs.promises.readFile(args.path, 'utf8') });
-                }
-                catch (error) {
-                    return { errors: [{ text: error.message }] };
-                }
-            });
+            build.onLoad({ filter: filter ?? /\.[jt]sx?$/ }, async (args) => transform({ args, contents: await promises_1.readFile(args.path, 'utf8') }));
             build.onResolve({ filter: RegExp(String.raw `\.${pluginName}\.css`) }, ({ path }) => ({ path, namespace: pluginName }));
             build.onLoad({ filter: RegExp(String.raw `\.${pluginName}\.css`), namespace: pluginName }, ({ path }) => {
                 const contents = cssFileContentsMap.get(path);

@@ -1,6 +1,6 @@
 import { parse, ParserOptions } from '@babel/parser'
 import type { OnLoadArgs, OnLoadResult, Plugin, PluginBuild } from 'esbuild'
-import * as fs from 'fs'
+import { readFile } from 'fs/promises'
 import * as path from 'path'
 import WindiCss from 'windicss'
 import { StyleSheet } from 'windicss/utils/style'
@@ -64,7 +64,7 @@ const plugin: EsbuildPluginWindiCss = ({ filter, babelParserOptions, windiCssCon
     if (styleSheet.children.length !== 0) {
       const cssFilename = `${args.path}.${pluginName}.css`
       cssFileContentsMap.set(cssFilename, styleSheet.combine().sort().build(true))
-      contents = `import '${cssFilename}'\n${contents}`
+      contents = `import '${cssFilename.replace(/\\/g, '\\\\')}';\n${contents}`
     }
     return { contents, loader: path.extname(args.path).slice(1) as 'js' | 'jsx' | 'ts' | 'tsx' }
   }
@@ -74,13 +74,7 @@ const plugin: EsbuildPluginWindiCss = ({ filter, babelParserOptions, windiCssCon
       if (pipe?.transform) {
         return transform(pipe.transform)
       }
-      build.onLoad({ filter: filter ?? /\.[jt]sx?$/ }, async args => {
-        try {
-          return transform({ args, contents: await fs.promises.readFile(args.path, 'utf8') })
-        } catch (error) {
-          return { errors: [{ text: error.message }] }
-        }
-      })
+      build.onLoad({ filter: filter ?? /\.[jt]sx?$/ }, async args => transform({ args, contents: await readFile(args.path, 'utf8') }))
       build.onResolve({ filter: RegExp(String.raw`\.${pluginName}\.css`) }, ({ path }) => ({ path, namespace: pluginName }))
       build.onLoad({ filter: RegExp(String.raw`\.${pluginName}\.css`), namespace: pluginName }, ({ path }) => {
         const contents = cssFileContentsMap.get(path)
