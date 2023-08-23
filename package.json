@@ -22,15 +22,15 @@
     "serve": "node test/serve.js"
   },
   "devDependencies": {
-    "@babel/types": "^7.14.4",
-    "@types/node": "^14.17.1",
-    "esbuild": "^0.12.5",
+    "@babel/types": "^7.22.10",
+    "@types/node": "^18.17.8",
+    "esbuild": "^0.19.2",
     "esbuild-plugin-pipe": "^0.2.0",
-    "rimraf": "^3.0.2",
-    "typescript": "^4.3.2"
+    "rimraf": "^5.0.1",
+    "typescript": "^5.1.6"
   },
   "dependencies": {
-    "@babel/parser": "^7.14.4",
-    "windicss": "^3.0.12"
+    "@babel/parser": "^7.22.10",
+    "windicss": "^3.5.6"
   }
 }
