@@ -6,7 +6,6 @@ This plugin uses [@babel/parser](https://babeljs.io/docs/en/babel-parser) to ext
 ## Limitations
 
 - [Attributify Mode](https://windicss.org/posts/attributify.html) is not supported.
-- Building multiple entry points is not supported.
 
 ## Installation
 

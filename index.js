@@ -43,21 +43,13 @@ const plugin = ({ filter, babelParserOptions, windiCssConfig } = {}) => {
         tokens: true,
         plugins: ['jsx', 'typescript', 'topLevelAwait'],
     };
-    let windiCss = new windicss_1.default(windiCssConfig);
-    let firstFilePath;
+    const windiCss = new windicss_1.default(windiCssConfig);
     const cssFileContentsMap = new Map();
     const transform = ({ args, contents }) => {
-        // recreate WindiCss instance for each build
-        if (firstFilePath === undefined) {
-            firstFilePath = args.path;
-        }
-        else if (firstFilePath === args.path) {
-            windiCss = new windicss_1.default(windiCssConfig);
-        }
         const styleSheet = new style_1.StyleSheet();
         for (const token of (0, parser_1.parse)(contents, resolvedBabelParserOptions).tokens) {
             if (token.value && (token.type.label === 'string' || token.type.label === 'template')) {
-                const interpreted = windiCss.interpret(token.value.replace(ignoredClassPattern, ' ').trim(), true);
+                const interpreted = windiCss.interpret(token.value.replace(ignoredClassPattern, ' ').trim());
                 if (interpreted.success.length !== 0) {
                     styleSheet.extend(interpreted.styleSheet);
                 }

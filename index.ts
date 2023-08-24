@@ -41,21 +41,13 @@ const plugin: EsbuildPluginWindiCss = ({ filter, babelParserOptions, windiCssCon
     tokens: true,
     plugins: ['jsx', 'typescript', 'topLevelAwait'],
   }
-  let windiCss = new WindiCss(windiCssConfig)
-  let firstFilePath: string | undefined
+  const windiCss = new WindiCss(windiCssConfig)
   const cssFileContentsMap = new Map<string, string>()
   const transform = ({ args, contents }: EsbuildPipeableTransformArgs) => {
-    // recreate WindiCss instance for each build
-    if (firstFilePath === undefined) {
-      firstFilePath = args.path
-    } else if (firstFilePath === args.path) {
-      windiCss = new WindiCss(windiCssConfig)
-    }
-
     const styleSheet = new StyleSheet()
     for (const token of parse(contents, resolvedBabelParserOptions).tokens!) {
       if (token.value && (token.type.label === 'string' || token.type.label === 'template')) {
-        const interpreted = windiCss.interpret(token.value.replace(ignoredClassPattern, ' ').trim(), true)
+        const interpreted = windiCss.interpret(token.value.replace(ignoredClassPattern, ' ').trim())
         if (interpreted.success.length !== 0) {
           styleSheet.extend(interpreted.styleSheet)
         }
